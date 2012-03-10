@@ -1,21 +1,55 @@
 # coding: utf-8
 
 class Fluent::AlertOutput < Fluent::Output
+  class FormatterText
+    def parse
+    end
+    def initialize(format)
+      @output = ''
+    end
+
+    def node_var(varname, data)
+      if data[varname].is_a? Hash
+        buf = ''
+        data[varname].each do |k, v|
+          buf += "\n" if buf != ''
+          buf += "#{k}: #{v}"
+        end
+        buf
+      else
+        data[varname]
+      end
+    end
+
+  end
+
+
   Fluent::Plugin.register_output('alert', self)
 
   # config_param :hoge, :string, :default => 'hoge'
 
-
-
-  def init_buffering
-    @buffer = {}
-  end
-
   def initialize
     super
+    @alert_list = []
   end
 
+#  def match_regexp(regexp, var)
+#p Regexp.new(regexp) =~ var
+#    Regexp.new(regexp) =~ var
+#  end
+
+
+
+
   def configure(conf)
+return
+    p conf
+    conf.elements.select { |e| e.name == 'alert'}.each do |e|
+      p e
+      p e.elements[0]
+      p e.elements[1]
+#    
+    end
     super
   end
 
