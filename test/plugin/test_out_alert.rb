@@ -1,13 +1,78 @@
+# coding: utf-8
 require 'helper.rb'
 
 class FormatterTextTest < Test::Unit::TestCase
-  def test_node_var
-    f = Fluent::AlertOutput::FormatterText.new('')
-    assert_equal 'hoge', f.node_var('test', {'test' => 'hoge'})
-    assert_equal 'fuga', f.node_var('test', {'test' => 'fuga'})
-    assert_equal "hoge\nfuga", f.node_var('test', {'test' => "hoge\nfuga"})
-    assert_equal "hoge: fuga", f.node_var('test', {'test' => {'hoge' => 'fuga'}})
-    assert_equal "hoge: fuga\npiyo: poyo", f.node_var('test', {'test' => {'hoge' => 'fuga', 'piyo' => 'poyo'}})
+  def test_output_var
+    ## 文字列
+    # 文字列単品
+    f = Fluent::AlertOutput::FormatterText.new("")
+    f.output_var "hoge"
+    assert_equal "\"hoge\"\n", f.text
+
+    # 複数行文字列
+    f.text = ""
+    f.output_var "multiline\nstring"
+    assert_equal "\"multiline\\n\n string\"\n", f.text
+
+    # 複数行文字列(3行)
+    f.text = ""
+    f.output_var "multiline\n3lines\nstring"
+    assert_equal "\"multiline\\n\n 3lines\\n\n string\"\n", f.text
+
+    # 継続状態、文字列単品"
+    f.text = "hoge.html:80: "
+    f.output_var "hoge"
+	assert_equal "hoge.html:80: \"hoge\"\n", f.text
+
+    # 継続状態、複数行文字列
+    f.text = "hoge.html:80: "
+    f.output_var "multiline\nstring"
+	assert_equal "hoge.html:80: \"multiline\\n\n               string\"\n", f.text
+
+    # 継続状態(\n含む)、文字列単品
+    f.text = "hoge\nfuga: "
+    f.output_var "piyo"
+    assert_equal "hoge\nfuga: \"piyo\"\n", f.text
+
+    # 継続状態(\n含む)、複数行文字列
+    f.text = "hogehoge\nfuga: "
+    f.output_var "multiline\nstring"
+    assert_equal "hogehoge\nfuga: \"multiline\\n\n       string\"\n", f.text
+
+	## 自分がHash/Array, 子が文字列
+    # Hash, 文字列単品
+    f.text = ""
+    f.output_var("hoge" => "ほげ")
+    assert_equal "hoge: \"ほげ\"\n", f.text
+
+    # Hash, 複数行文字列
+    f.text = ""
+    f.output_var("hoge" => "multiline\nstring")
+    assert_equal "hoge: \"multiline\\n\n       string\"\n", f.text
+
+    # Hash複数, 文字列単品＆複数行文字列
+    f.text = ""
+    f.output_var("hoge" => "ほげ", "fuga" => "multiline\nstring")
+    assert_equal "hoge: \"ほげ\"\nfuga: \"multiline\\n\n       string\"\n", f.text
+
+    # 継続状態、Hash複数, 文字列単品＆複数行文字列
+    f.text = "hoge.html:80: "
+    f.output_var("hoge" => "ほげ", "fuga" => "multiline\nstring")
+    assert_equal "hoge.html:80: \n  hoge: \"ほげ\"\n  fuga: \"multiline\\n\n         string\"\n", f.text
+
+    # Array, 文字列単品
+    f.text = ""
+    f.output_var(["ほげ", "ふが"])
+    assert_equal "0: \"ほげ\"\n1: \"ふが\"\n", f.text
+
+    # Array, 複数行文字列
+    f.text = ""
+    f.output_var(["ほげ", "multiline\nstring"])
+    assert_equal "0: \"ほげ\"\n1: \"multiline\\n\n    string\"\n", f.text
+
+    ## 自分がHash/Array, 子がHash/Array
+    
+
   end
 
 end
@@ -27,7 +92,7 @@ class AlertOutputTest < Test::Unit::TestCase
       </action>
       <action>
         type format_text
-        format {@application|multiline}{hl}{each @log}{@file}:{@line}:{if @func}{@func}:{end}{@var|inline}{nl}{end}{hl}{@pagebody}
+        format {@application}{hl}{each @log}{@file}:{@line}:{if @func}{@func}:{end} {@var}{nl}{end}{hl}{@pagebody}
       </action>
       <action>
         type tag

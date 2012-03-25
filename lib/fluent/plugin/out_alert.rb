@@ -2,22 +2,53 @@
 
 class Fluent::AlertOutput < Fluent::Output
   class FormatterText
-    def parse
-    end
+    attr_accessor :text
+
     def initialize(format)
-      @output = ''
+      @text = ''
     end
 
-    def node_var(varname, data)
-      if data[varname].is_a? Hash
-        buf = ''
-        data[varname].each do |k, v|
-          buf += "\n" if buf != ''
-          buf += "#{k}: #{v}"
-        end
-        buf
+    def output_var_string(var)
+      text_list = var.split(/\n/)
+      if text_list.size == 1
+        @text += "\"#{var}\"\n"
       else
-        data[varname]
+        if @text.rindex("\n")
+          indent = @text.size - (@text.rindex("\n") + 1)
+        else 
+          indent = @text.size
+        end
+        indent += 1
+
+        @text += "\"#{text_list[0]}\\n\n"
+        (1 .. text_list.size - 2).each do |i|
+          @text += ' ' * indent + "#{text_list[i]}\\n\n"
+        end
+        @text += ' ' * indent + "#{text_list[text_list.size - 1]}\"\n"
+      end
+    end
+
+    def output_var(var)
+      indent = 0
+      if var.is_a? String
+        output_var_string(var)
+      elsif var.is_a? Hash
+        if @text.size > 0
+          indent += 2
+          @text += "\n"
+        end
+
+        var.each do |key, var2|
+          @text += ' ' * indent + "#{key}: "
+          output_var_string(var2)
+        end
+      elsif var.is_a? Array
+        index = 0
+        var.each do |var2|
+          @text += ' ' * indent + "#{index}: "
+          output_var_string(var2)
+          index += 1
+        end
       end
     end
 
