@@ -65,8 +65,11 @@ class Fluent::AlertOutput < Fluent::Output
   end
 
   class Alert
+    attr_reader :type
+
     def initialize(elements)
       raise Fluent::ConfigError, "no type" unless elements['type']
+      @type = elements['type'].to_sym
     end
   end
 
