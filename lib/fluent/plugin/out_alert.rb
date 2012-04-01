@@ -69,6 +69,11 @@ class Fluent::AlertOutput < Fluent::Output
     end
   end
 
+  class AlertMail
+    def initialize(elements)
+    end
+  end
+
   class AlertFactory
 
     def self.create(elements)
@@ -77,6 +82,8 @@ class Fluent::AlertOutput < Fluent::Output
       case elements['type']
       when 'config'
         return AlertConfig.new(elements)
+      when 'mail'
+        return AlertMail.new(elements)
       end
     end
   end
