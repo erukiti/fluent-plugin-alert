@@ -64,24 +64,96 @@ class Fluent::AlertOutput < Fluent::Output
     end
   end
 
-  class AlertDrop
-    def initialize(elements)
+  class AlertMatchTagRegexp
+    def initialize(var)
+      @regexp = Regexp.new(var)
+    end
+
+    def match(tag, time, record)
+      (@regexp =~ tag) != nil
     end
   end
 
-  class AlertConfig
-    def initialize(elements)
+  class AlertMatchRegexp
+    def match(tag, time, record)
     end
   end
 
-  class AlertMail
-    def initialize(elements)
+  class AlertMatchAll
+    def match(tag, time, record)
+      true
     end
   end
 
-  class AlertFactory
 
+  class AlertMatchFactory
     def self.create(elements)
+      count = 0
+      matcher = nil
+      elements.each do |key, var|
+        case key
+        when 'match_tag_regexp'
+          count += 1
+          matcher = AlertMatchTagRegexp.new(var)
+        when 'match_regexp'
+          count += 1
+          matcher = AlertMatchRegexp.new
+        end
+      end
+
+      if count == 0
+        return AlertMatchAll.new
+      elsif count == 1
+        return matcher
+      else
+        raise Fluent::ConfigError
+      end
+    end
+  end
+
+  class AlertModule
+    def initialize(elements)
+      @matcher = AlertMatchFactory.create(elements)
+    end
+
+    def match(tag, time, record)
+      @matcher.match(tag, time, record)
+    end
+  end
+
+  class AlertDrop < AlertModule
+
+    def initialize(elements)
+      super
+    end
+    def emit(tag, time, record)
+      return unless match(tag, time, record)
+    end
+  end
+
+  class AlertConfig < AlertModule
+
+    def initialize(elements)
+      super
+    end
+
+    def emit(tag, time, record)
+      return unless match(tag, time, record)
+    end
+  end
+
+  class AlertMail < AlertModule
+    def initialize(elements)
+      super
+    end
+
+    def emit(tag, time, record)
+      return unless match(tag, time, record)
+    end
+  end
+
+  class Alert
+    def create(elements)
       raise Fluent::ConfigError, "no type" unless elements['type']
       # FIXME: リフレクション使った何かに書き直す
       case elements['type']
@@ -93,18 +165,19 @@ class Fluent::AlertOutput < Fluent::Output
         return AlertDrop.new(elements)
       end
     end
-  end
 
-  class Alert
     def initialize
       @alert_list = []
     end
 
     def configure(elements_list)
       @alert_list = []
+      elements_list.each do |elements|
+        @alert_list << create(elements)
+      end
     end
 
-    def emit()
+    def emit(tag, time, record)
     end
   end
 
@@ -115,9 +188,6 @@ class Fluent::AlertOutput < Fluent::Output
     @alert = Alert.new
   end
 
-  def match_regexp(regexp, var)
-    (Regexp.new(regexp) =~ var) != nil
-  end
 
   def configure(conf)
     elements_list = []

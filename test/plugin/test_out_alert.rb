@@ -96,26 +96,49 @@ class FormatterTextTest < Test::Unit::TestCase
 
 end
 
-class AlertTest < Test::Unit::TestCase
-  def test_configuration
-    assert_raise(Fluent::ConfigError, "no type") {
-      Fluent::AlertOutput::AlertFactory.create({})
-    }
+class AlertMatcherAllMatchTagRegexp < Test::Unit::TestCase
+  def test_create
+    matcher = Fluent::AlertOutput::AlertMatchFactory.create({'match_tag_regexp' => '\.config$'})
+    assert_equal Fluent::AlertOutput::AlertMatchTagRegexp, matcher.class
+  end
 
-    alert = Fluent::AlertOutput::AlertFactory.create({'type' => 'config'})
-    assert_equal Fluent::AlertOutput::AlertConfig, alert.class
-
-    alert = Fluent::AlertOutput::AlertFactory.create({'type' => 'mail'})
-    assert_equal Fluent::AlertOutput::AlertMail, alert.class
-
-    alert = Fluent::AlertOutput::AlertFactory.create({'type' => 'drop'})
-    assert_equal Fluent::AlertOutput::AlertDrop, alert.class
+  def test_match
+    matcher = Fluent::AlertOutput::AlertMatchFactory.create({'match_tag_regexp' => '\.config$'})
+    assert_equal true, matcher.match("hoge.config", Time.now(), {})
+    
   end
 end
 
-class AlertConfig < Test::Unit::TestCase
+class AlertMatcherAllTest < Test::Unit::TestCase
+  def test_create
+    matcher = Fluent::AlertOutput::AlertMatchFactory.create({})
+    assert_equal Fluent::AlertOutput::AlertMatchAll, matcher.class
+  end
+
+  def test_match
+    matcher = Fluent::AlertOutput::AlertMatchFactory.create({})
+    assert_equal true, matcher.match("hoge.fuga", Time.now(), {})
+  end
 end
 
+class AlertTest < Test::Unit::TestCase
+  def test_create
+    alert = Fluent::AlertOutput::Alert.new
+
+    assert_raise(Fluent::ConfigError, "no type") {
+      alert.create({})
+    }
+
+    alert_module = alert.create({'type' => 'config'})
+    assert_equal Fluent::AlertOutput::AlertConfig, alert_module.class
+
+    alert_module = alert.create({'type' => 'mail'})
+    assert_equal Fluent::AlertOutput::AlertMail, alert_module.class
+
+    alert_module = alert.create({'type' => 'drop'})
+    assert_equal Fluent::AlertOutput::AlertDrop, alert_module.class
+  end
+end
 
 class AlertOutputTest < Test::Unit::TestCase
   def setup
@@ -158,13 +181,6 @@ class AlertOutputTest < Test::Unit::TestCase
 
   def create_driver(conf = CONFIG, tag='test')
     Fluent::Test::OutputTestDriver.new(Fluent::AlertOutput, tag).configure(conf)
-  end
-
-  def test_match_regexp
-    d = create_driver
-
-    assert_equal true, d.instance.match_regexp('hoge', 'hoge')
-    assert_equal false, d.instance.match_regexp('^hoge', 'fuga')
   end
 
   def test_configure
