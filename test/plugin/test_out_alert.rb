@@ -71,7 +71,16 @@ class FormatterTextTest < Test::Unit::TestCase
     assert_equal "0: \"ほげ\"\n1: \"multiline\\n\n    string\"\n", f.text
 
     ## 自分がHash/Array, 子がHash/Array
-    
+    # 非継続状態
+    f.text = ""
+    f.output_var({"hoge" => {"fuga" => "piyo"}})
+    assert_equal "hoge: \n  fuga: \"piyo\"\n", f.text
+
+    #継続状態
+    f.text = "tpl/hoge.html:80: "
+    f.output_var({"hoge" => {"fuga" => "piyo"}})
+    assert_equal "tpl/hoge.html:80: \n  hoge: \n    fuga: \"piyo\"\n", f.text
+
 
   end
 
@@ -84,26 +93,29 @@ class AlertOutputTest < Test::Unit::TestCase
 
   CONFIG = %[
     <alert>
-      match_regexp application.path \/hoge\/fuga.*
-      <action>
-        type add
-        key hoge
-        filed test_hoge
-      </action>
-      <action>
-        type format_text
-        format {@application}{hl}{each @log}{@file}:{@line}:{if @func}{@func}:{end} {@var}{nl}{end}{hl}{@pagebody}
-      </action>
-      <action>
-        type tag
-        tag mail.alert
-      </action>
+      match_tag_regexp \.config$
+      type config
+    </alert>
+    <alert>
+      match_regexp application.path ^\/hoge\/
+      type mail
+      mailto hoge@example.com
+      format {@application}{hl}{each @log}{@file}:{@line}:{if @func}{@func}:{end} {@var}{nl}{end}{hl}{@pagebody}
     </alert>
     <alert>
       match_exists /tmp/hoge
-      <action>
-        type drop
-      </action>
+      type drop
+    </alert>
+    <alert>
+      match_tag_regexp \.fatal$
+      type mail
+      mailto fuga@example.com
+      format {@application}{hl}{each @log}{@file}:{@line}:{if @func}{@func}:{end} {@var}{nl}{end}{hl}{@pagebody}
+    </alert>
+    <alert>
+      type foward
+      tag hoge.fuga
+      add_key hoge fuga
     </alert>
   ]
 

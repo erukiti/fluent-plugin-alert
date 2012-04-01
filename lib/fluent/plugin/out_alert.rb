@@ -28,8 +28,7 @@ class Fluent::AlertOutput < Fluent::Output
       end
     end
 
-    def output_var(var)
-      indent = 0
+    def output_var(var, indent = 0)
       if var.is_a? String
         output_var_string(var)
       elsif var.is_a? Hash
@@ -40,13 +39,13 @@ class Fluent::AlertOutput < Fluent::Output
 
         var.each do |key, var2|
           @text += ' ' * indent + "#{key}: "
-          output_var_string(var2)
+          output_var(var2, indent)
         end
       elsif var.is_a? Array
         index = 0
         var.each do |var2|
           @text += ' ' * indent + "#{index}: "
-          output_var_string(var2)
+          output_var(var2, indent)
           index += 1
         end
       end
