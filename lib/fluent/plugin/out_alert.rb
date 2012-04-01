@@ -64,6 +64,11 @@ class Fluent::AlertOutput < Fluent::Output
     end
   end
 
+  class AlertDrop
+    def initialize(elements)
+    end
+  end
+
   class AlertConfig
     def initialize(elements)
     end
@@ -84,17 +89,30 @@ class Fluent::AlertOutput < Fluent::Output
         return AlertConfig.new(elements)
       when 'mail'
         return AlertMail.new(elements)
+      when 'drop'
+        return AlertDrop.new(elements)
       end
+    end
+  end
+
+  class Alert
+    def initialize
+      @alert_list = []
+    end
+
+    def configure(elements_list)
+      @alert_list = []
+    end
+
+    def emit()
     end
   end
 
   Fluent::Plugin.register_output('alert', self)
 
-  attr_reader :alert_list
-
   def initialize
     super
-    @alert_list = []
+    @alert = Alert.new
   end
 
   def match_regexp(regexp, var)
@@ -102,11 +120,11 @@ class Fluent::AlertOutput < Fluent::Output
   end
 
   def configure(conf)
-    @alert_list = []
+    elements_list = []
     conf.elements.select { |e| e.name == 'alert'}.each do |e|
-      @alert_list << AlertFactory.create(e)
+      elements_list << e
     end
-    super
+    @alert.configure(elements_list)
   end
 
   def start
@@ -122,9 +140,9 @@ class Fluent::AlertOutput < Fluent::Output
   end
 
   def emit(tag, es, chain)
-#    es.each do |time, record|
-#      Fluent::Engine.emit(tag, time, record) if first_fire(time, record)
-#    end
-#    chain.next
+    es.each do |time, record|
+      @alert.emit(tag, time, record)
+    end
+    chain.next
   end
 end
