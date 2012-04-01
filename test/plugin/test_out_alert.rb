@@ -96,6 +96,14 @@ class FormatterTextTest < Test::Unit::TestCase
 
 end
 
+class AlertTest < Test::Unit::TestCase
+  def test_configuration
+    
+  end
+
+end
+
+
 class AlertOutputTest < Test::Unit::TestCase
   def setup
     Fluent::Test.setup
@@ -146,15 +154,9 @@ class AlertOutputTest < Test::Unit::TestCase
     assert_equal false, d.instance.match_regexp('^hoge', 'fuga')
   end
 
-
-
-
-
-
   def test_configure
     d = create_driver
-
-#    outputs = d.instance.outputs
+     assert_equal 5, d.instance.alert_list.size
 #    assert_equal 3, outputs.size
 #    assert_equal Fluent::TestOutput, outputs[0].class
 #    assert_equal Fluent::TestOutput, outputs[1].class

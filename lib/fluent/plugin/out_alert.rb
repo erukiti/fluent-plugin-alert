@@ -64,10 +64,14 @@ class Fluent::AlertOutput < Fluent::Output
     end
   end
 
+  class Alert
+    def initialize(elements)
+    end
+  end
 
   Fluent::Plugin.register_output('alert', self)
 
-  # config_param :hoge, :string, :default => 'hoge'
+  attr_reader :alert_list
 
   def initialize
     super
@@ -78,17 +82,10 @@ class Fluent::AlertOutput < Fluent::Output
     (Regexp.new(regexp) =~ var) != nil
   end
 
-
-
-
   def configure(conf)
-return
-    p conf
+    @alert_list = []
     conf.elements.select { |e| e.name == 'alert'}.each do |e|
-      p e
-      p e.elements[0]
-      p e.elements[1]
-#    
+      @alert_list << Alert.new(e)
     end
     super
   end
