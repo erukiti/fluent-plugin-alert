@@ -62,7 +62,6 @@ class Fluent::AlertOutput < Fluent::Output
         end
       end
     end
-
   end
 
 
@@ -75,10 +74,9 @@ class Fluent::AlertOutput < Fluent::Output
     @alert_list = []
   end
 
-#  def match_regexp(regexp, var)
-#p Regexp.new(regexp) =~ var
-#    Regexp.new(regexp) =~ var
-#  end
+  def match_regexp(regexp, var)
+    (Regexp.new(regexp) =~ var) != nil
+  end
 
 
 

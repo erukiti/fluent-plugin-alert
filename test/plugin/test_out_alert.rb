@@ -142,8 +142,8 @@ class AlertOutputTest < Test::Unit::TestCase
   def test_match_regexp
     d = create_driver
 
-#    assert_equal true, d.instance.match_regexp('hoge', 'hoge')
-#    assert_equal false, d.instance.match_regexp('^hoge', 'fuga')
+    assert_equal true, d.instance.match_regexp('hoge', 'hoge')
+    assert_equal false, d.instance.match_regexp('^hoge', 'fuga')
   end
 
 
