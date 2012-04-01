@@ -66,6 +66,7 @@ class Fluent::AlertOutput < Fluent::Output
 
   class Alert
     def initialize(elements)
+      raise Fluent::ConfigError, "no type" unless elements['type']
     end
   end
 
