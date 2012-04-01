@@ -8,6 +8,10 @@ class Fluent::AlertOutput < Fluent::Output
       @text = ''
     end
 
+    def output_indent(indent)
+      @text += ' ' * indent
+    end
+
     def output_var_string(var)
       text_list = var.split(/\n/)
       if text_list.size == 1
@@ -22,9 +26,11 @@ class Fluent::AlertOutput < Fluent::Output
 
         @text += "\"#{text_list[0]}\\n\n"
         (1 .. text_list.size - 2).each do |i|
-          @text += ' ' * indent + "#{text_list[i]}\\n\n"
+          output_indent(indent)
+          @text += "#{text_list[i]}\\n\n"
         end
-        @text += ' ' * indent + "#{text_list[text_list.size - 1]}\"\n"
+        output_indent(indent)
+        @text += "#{text_list[text_list.size - 1]}\"\n"
       end
     end
 
@@ -38,7 +44,8 @@ class Fluent::AlertOutput < Fluent::Output
         end
 
         var.each do |key, var2|
-          @text += ' ' * indent + "#{key}: "
+          output_indent(indent)
+          @text += "#{key}: "
           output_var(var2, indent)
         end
       elsif var.is_a? Array
@@ -49,7 +56,8 @@ class Fluent::AlertOutput < Fluent::Output
 
         index = 0
         var.each do |var2|
-          @text += ' ' * indent + "#{index}: "
+          output_indent(indent)
+          @text += "#{index}: "
           output_var(var2, indent)
           index += 1
         end
