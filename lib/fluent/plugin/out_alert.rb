@@ -42,6 +42,11 @@ class Fluent::AlertOutput < Fluent::Output
           output_var(var2, indent)
         end
       elsif var.is_a? Array
+        if @text.size > 0
+          indent += 2
+          @text += "\n"
+        end
+
         index = 0
         var.each do |var2|
           @text += ' ' * indent + "#{index}: "

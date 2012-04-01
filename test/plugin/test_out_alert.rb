@@ -71,15 +71,25 @@ class FormatterTextTest < Test::Unit::TestCase
     assert_equal "0: \"ほげ\"\n1: \"multiline\\n\n    string\"\n", f.text
 
     ## 自分がHash/Array, 子がHash/Array
-    # 非継続状態
+    # 非継続状態 Hash/Hash
     f.text = ""
     f.output_var({"hoge" => {"fuga" => "piyo"}})
     assert_equal "hoge: \n  fuga: \"piyo\"\n", f.text
 
-    #継続状態
+    #継続状態 Hash/Hash
     f.text = "tpl/hoge.html:80: "
     f.output_var({"hoge" => {"fuga" => "piyo"}})
     assert_equal "tpl/hoge.html:80: \n  hoge: \n    fuga: \"piyo\"\n", f.text
+
+    # 非継続状態 Hash/Hash
+    f.text = ""
+    f.output_var({"hoge" => ['piyo']})
+    assert_equal "hoge: \n  0: \"piyo\"\n", f.text
+
+    #継続状態 Hash/Hash
+    f.text = "tpl/hoge.html:80: "
+    f.output_var({"hoge" => ['piyo']})
+    assert_equal "tpl/hoge.html:80: \n  hoge: \n    0: \"piyo\"\n", f.text
 
 
   end
