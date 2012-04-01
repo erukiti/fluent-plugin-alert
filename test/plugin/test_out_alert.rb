@@ -99,11 +99,11 @@ end
 class AlertTest < Test::Unit::TestCase
   def test_configuration
     assert_raise(Fluent::ConfigError, "no type") {
-      Fluent::AlertOutput::Alert.new({})
+      Fluent::AlertOutput::AlertFactory.create({})
     }
 
-    alert = Fluent::AlertOutput::Alert.new({'type' => 'config'})
-    assert_equal :config, alert.type
+    alert = Fluent::AlertOutput::AlertFactory.create({'type' => 'config'})
+    assert_equal Fluent::AlertOutput::AlertConfig, alert.class
 
 
   end

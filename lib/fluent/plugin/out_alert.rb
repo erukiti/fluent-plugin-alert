@@ -64,12 +64,20 @@ class Fluent::AlertOutput < Fluent::Output
     end
   end
 
-  class Alert
-    attr_reader :type
-
+  class AlertConfig
     def initialize(elements)
+    end
+  end
+
+  class AlertFactory
+
+    def self.create(elements)
       raise Fluent::ConfigError, "no type" unless elements['type']
-      @type = elements['type'].to_sym
+      # FIXME: リフレクション使った何かに書き直す
+      case elements['type']
+      when 'config'
+        return AlertConfig.new(elements)
+      end
     end
   end
 
@@ -89,7 +97,7 @@ class Fluent::AlertOutput < Fluent::Output
   def configure(conf)
     @alert_list = []
     conf.elements.select { |e| e.name == 'alert'}.each do |e|
-      @alert_list << Alert.new(e)
+      @alert_list << AlertFactory.create(e)
     end
     super
   end
