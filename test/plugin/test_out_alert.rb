@@ -105,6 +105,9 @@ class AlertTest < Test::Unit::TestCase
     alert = Fluent::AlertOutput::AlertFactory.create({'type' => 'config'})
     assert_equal Fluent::AlertOutput::AlertConfig, alert.class
 
+    alert = Fluent::AlertOutput::AlertFactory.create({'type' => 'mail'})
+    assert_equal Fluent::AlertOutput::AlertMail, alert.class
+
 
   end
 
