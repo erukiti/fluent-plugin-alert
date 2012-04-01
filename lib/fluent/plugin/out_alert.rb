@@ -12,17 +12,16 @@ class Fluent::AlertOutput < Fluent::Output
       @text += ' ' * indent
     end
 
+	def get_textindent
+      @text.rindex("\n") ? @text.size - (@text.rindex("\n") + 1) : @text.size
+	end
+
     def output_var_string(var)
       text_list = var.split(/\n/)
       if text_list.size == 1
         @text += "\"#{var}\"\n"
       else
-        if @text.rindex("\n")
-          indent = @text.size - (@text.rindex("\n") + 1)
-        else 
-          indent = @text.size
-        end
-        indent += 1
+        indent = get_textindent + 1
 
         @text += "\"#{text_list[0]}\\n\n"
         (1 .. text_list.size - 2).each do |i|
