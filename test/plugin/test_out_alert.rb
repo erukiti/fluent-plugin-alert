@@ -105,6 +105,7 @@ class AlertMatcherAllMatchTagRegexp < Test::Unit::TestCase
   def test_match
     matcher = Fluent::AlertOutput::AlertMatchFactory.create({'match_tag_regexp' => '\.config$'})
     assert_equal true, matcher.match("hoge.config", Time.now(), {})
+    assert_equal false, matcher.match("hoge.configure", Time.now(), {})
     
   end
 end
