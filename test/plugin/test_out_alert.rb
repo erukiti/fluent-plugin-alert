@@ -115,7 +115,18 @@ class FormatterTextTest < Test::Unit::TestCase
   def test_command_parse()
     f = Fluent::AlertOutput::FormatterText.new("")
 
-    assert_equal [['text', 'hoge']], f.command_parse("hoge")
+    assert_equal [[:text, 'hoge']], f.command_parse("hoge")
+    assert_equal [[:var, 'hoge']], f.command_parse("{@hoge}")
+    assert_equal [[:var, 'fuga']], f.command_parse("{@fuga}")
+    assert_equal [[:text, 'hoge'], [:var, 'hoge']], f.command_parse("hoge{@hoge}")
+    assert_equal [[:text, 'hoge'], [:var, 'hoge'], [:text, 'fuga']], f.command_parse("hoge{@hoge}fuga")
+    assert_equal [[:text, 'hoge'], [:var, 'hoge'], [:text, 'fuga'], [:var, 'piyo']], f.command_parse("hoge{@hoge}fuga{@piyo}")
+    assert_equal [[:var, 'hoge'], [:var, 'fuga']], f.command_parse("{@hoge}{@fuga}")
+    assert_equal [[:nl], [:hr]], f.command_parse("{nl}{hr}")
+    assert_equal [[:if, 'hoge', [[:text, 'fuga']]]], f.command_parse("{if hoge}fuga{end}")
+    assert_equal [[:text, ' '], [:if, 'hoge', [[:text, 'fuga']]]], f.command_parse(" {if hoge}fuga{end}")
+    assert_equal [[:if, 'hoge', [[:text, 'fuga'], [:var, 'piyo']]]], f.command_parse("{if hoge}fuga{@piyo}{end}")
+    assert_equal [[:if, 'hoge', [[:text, 'fuga']]], [:each, 'hoge', [[:text, 'fuga']]]], f.command_parse("{if hoge}fuga{end}{each hoge}fuga{end}")
   end
 
 end

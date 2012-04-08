@@ -52,7 +52,49 @@ class Fluent::AlertOutput < Fluent::Output
     attr_accessor :text
 
     def command_parse(command)
-      [['text', command]]
+      command_composite = []
+      while command.size > 0
+        index = command.index(/\{(@|[a-zA-Z_\-]+\s*)([a-zA-Z_\-]*)\}/)
+        unless index
+          command_composite << [:text, command] if command.size > 0
+          break
+        end
+
+        if index > 0
+          command_composite << [:text, command[0 ... index]]
+        end
+
+        case $1.strip
+        when '@'
+          command_composite << [:var, $2]
+        when 'hr'
+          command_composite << [:hr]
+        when 'nl'
+          command_composite << [:nl]
+        when 'if'
+          # FIXME: MatchData 使って書き直す
+          command = $'
+          var = $2
+          index = command.index(/\{end\}/)
+          if index
+            command_composite << [:if, var, command_parse(command[0...index])]
+          else
+            command_composite << [:if, var, command_parse(command)]
+          end
+        when 'each'
+          command = $'
+          var = $2
+          index = command.index(/\{end\}/)
+          if index
+            command_composite << [:each, var, command_parse(command[0...index])]
+          else
+            command_composite << [:each, var, command_parse(command)]
+          end
+        end
+        command = $'
+      end
+
+      command_composite
     end
 
     def initialize(command)
