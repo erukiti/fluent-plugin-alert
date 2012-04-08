@@ -90,8 +90,32 @@ class FormatterTextTest < Test::Unit::TestCase
     f.text = "tpl/hoge.html:80: "
     f.output_var({"hoge" => ['piyo']})
     assert_equal "tpl/hoge.html:80: \n  hoge: \n    0: \"piyo\"\n", f.text
+  end
 
+  def test_output_nl
+    f = Fluent::AlertOutput::FormatterText.new("")
 
+    f.text = ""
+    f.output_nl
+    assert_equal "\n", f.text
+
+    f.text = "\n"
+    f.output_nl
+    assert_equal "\n", f.text
+
+    f.text = "hoge"
+    f.output_nl
+    assert_equal "hoge\n", f.text
+
+    f.text = "hoge\nhoge"
+    f.output_nl
+    assert_equal "hoge\nhoge\n", f.text
+  end
+
+  def test_command_parse()
+    f = Fluent::AlertOutput::FormatterText.new("")
+
+    assert_equal [['text', 'hoge']], f.command_parse("hoge")
   end
 
 end
@@ -182,7 +206,7 @@ class AlertOutputTest < Test::Unit::TestCase
       match_regexp application.path ^\/hoge\/
       type mail
       mailto hoge@example.com
-      format {@application}{hl}{each @log}{@file}:{@line}:{if @func}{@func}:{end} {@var}{nl}{end}{hl}{@pagebody}
+      format {@application}{hr}{each @log}{@file}:{@line}:{if @func}{@func}:{end} {@var}{nl}{end}{hr}{@pagebody}
     </alert>
     <alert>
       match_exists /tmp/hoge
@@ -192,7 +216,7 @@ class AlertOutputTest < Test::Unit::TestCase
       match_tag_regexp \.fatal$
       type mail
       mailto fuga@example.com
-      format {@application}{hl}{each @log}{@file}:{@line}:{if @func}{@func}:{end} {@var}{nl}{end}{hl}{@pagebody}
+      format {@application}{hr}{each @log}{@file}:{@line}:{if @func}{@func}:{end} {@var}{nl}{end}{hr}{@pagebody}
     </alert>
     <alert>
       type foward

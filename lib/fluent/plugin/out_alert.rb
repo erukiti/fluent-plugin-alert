@@ -1,11 +1,76 @@
 # coding: utf-8
 
 class Fluent::AlertOutput < Fluent::Output
+  class SendMail
+    @@default = {}
+    def self.set_default(default_config)
+      @@default = {}
+      @@default[:server] = default_config['server']
+      @@default[:port] = default_config['port']
+      @@default[:domain] = default_config['domain']
+      @@default[:from] = default_config['from']
+      @@default[:to] = default_config['to']
+      @@default[:subject] = default_config['subject']
+      @@default[:password] = default_config['password']
+      @@default[:authentication] = default_config['authentication']
+      @@default[:enable_starttls_auto] = default_config['enable_starttls_auto']
+    end
+
+    def self.send(config, body)
+      require 'mail'
+
+      server = config['server'] || @@default[:server]
+      port = config['port'] || @@default[:port]
+      domain = config['domain'] || @@default[:domain]
+      from = config['from'] || @@default[:from]
+      to = config['to'] || @@default[:to]
+      subject = config['subject'] || @@default[:subject]
+      password = config['password'] || @@default[:password]
+      authentication = config['authentication'] || @@default[:authentication]
+      enable_starttls_auto = config['enable_starttls_auto'] || @@default[:enable_starttls_auto]
+
+      mail = Mail.new
+      mail.charset = 'utf-8'
+      mail.from = from
+      mail.to = to
+      mail.subject = subject
+      mail.address = server
+      mail.port = port
+      mail.domain = domain
+      mail.user_name = from
+      mail.password = password if password
+      mail.authentication = authentication if authentication
+      mail.enable_starttls_auto = enable_starttls_auto if enable_starttls_auto
+      mail.body = body.encoding('utf-8', :invalid => :replace, :undef => :replace).force_encoding('binary')
+      mail.deliver
+
+    end
+  
+  end
+
   class FormatterText
     attr_accessor :text
 
-    def initialize(format)
+    def command_parse(command)
+      [['text', command]]
+    end
+
+    def initialize(command)
       @text = ''
+      @command = command_parse(command)
+    end
+
+    def format(var)
+      
+    end
+
+    def output_nl
+      @text += "\n" if @text.size ==0 || @text[@text.size - 1] != "\n"
+    end
+
+    def output_hr
+      @text += "\n" if @text.size ==0 || @text[@text.size - 1] != "\n"
+      @text += "----\n"
     end
 
     def output_indent(indent)
@@ -158,10 +223,13 @@ class Fluent::AlertOutput < Fluent::Output
   class AlertMail < AlertBase
     def initialize(elements)
       super
+      @config = elements
     end
 
     def emit(tag, time, record)
       return unless match(tag, time, record)
+      SendMail.send(@config, 'dummy')
+      #FIXME: Formatter で書き換える
     end
   end
 
@@ -201,6 +269,15 @@ class Fluent::AlertOutput < Fluent::Output
     @alert = Alert.new
   end
 
+  config_param :server, :string, :default => "localhost"
+  config_param :port, :integer, :default => 25
+  config_param :domain, :string, :default => nil
+  config_param :from, :string, :default => nil
+  config_param :to, :string, :default => nil
+  config_param :subject, :string, :default => nil
+  config_param :password, :string, :default => nil
+  config_param :authentication, :string, :default => nil
+  config_param :enable_starttls_auto, :bool, :default => false
 
   def configure(conf)
     elements_list = []
@@ -208,6 +285,7 @@ class Fluent::AlertOutput < Fluent::Output
       elements_list << e
     end
     @alert.configure(elements_list)
+    SendMail.set_default(conf)
   end
 
   def start
