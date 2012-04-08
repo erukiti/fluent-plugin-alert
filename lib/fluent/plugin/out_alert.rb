@@ -124,7 +124,7 @@ class Fluent::AlertOutput < Fluent::Output
     end
   end
 
-  class AlertModule
+  class AlertBase
     def initialize(elements)
       @matcher = AlertMatchFactory.create(elements)
     end
@@ -134,7 +134,7 @@ class Fluent::AlertOutput < Fluent::Output
     end
   end
 
-  class AlertDrop < AlertModule
+  class AlertDrop < AlertBase
 
     def initialize(elements)
       super
@@ -144,7 +144,7 @@ class Fluent::AlertOutput < Fluent::Output
     end
   end
 
-  class AlertConfig < AlertModule
+  class AlertConfig < AlertBase
 
     def initialize(elements)
       super
@@ -155,7 +155,7 @@ class Fluent::AlertOutput < Fluent::Output
     end
   end
 
-  class AlertMail < AlertModule
+  class AlertMail < AlertBase
     def initialize(elements)
       super
     end
