@@ -106,7 +106,24 @@ class AlertMatcherAllMatchTagRegexp < Test::Unit::TestCase
     matcher = Fluent::AlertOutput::AlertMatchFactory.create({'match_tag_regexp' => '\.config$'})
     assert_equal true, matcher.match("hoge.config", Time.now(), {})
     assert_equal false, matcher.match("hoge.configure", Time.now(), {})
-    
+  end
+end
+
+class AlertMatcherAllMatchTagRegexp < Test::Unit::TestCase
+  def test_create
+    matcher = Fluent::AlertOutput::AlertMatchFactory.create({'match_regexp' => 'hoge \/hoge$'})
+    assert_equal Fluent::AlertOutput::AlertMatchRegexp, matcher.class
+  end
+
+  def test_match
+    matcher = Fluent::AlertOutput::AlertMatchFactory.create({'match_regexp' => 'hoge \/hoge$'})
+    assert_equal true, matcher.match("test.test", Time.now(), {'hoge' => '/hoge'})
+    assert_equal false, matcher.match("test.test", Time.now(), {'fuga' => '/hoge'})
+    assert_equal false, matcher.match("test.test", Time.now(), {'hoge' => 'hoge'})
+
+    matcher = Fluent::AlertOutput::AlertMatchFactory.create({'match_regexp' => 'hoge.fuga \/hoge$'})
+    assert_equal true, matcher.match("test.test", Time.now(), {'hoge' => {'fuga' => '/hoge'}})
+
   end
 end
 

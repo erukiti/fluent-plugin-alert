@@ -75,7 +75,20 @@ class Fluent::AlertOutput < Fluent::Output
   end
 
   class AlertMatchRegexp
+    def initialize(var)
+      key, pattern = var.split(/ /, 2)
+      @regexp = Regexp.new(pattern)
+      @keys = key.split(/\./)
+    end
+
     def match(tag, time, record)
+      var = record
+      @keys.each do |key|
+        return false unless var[key]
+        var = var[key]
+      end
+
+      (@regexp =~ var) != nil
     end
   end
 
@@ -97,7 +110,7 @@ class Fluent::AlertOutput < Fluent::Output
           matcher = AlertMatchTagRegexp.new(var)
         when 'match_regexp'
           count += 1
-          matcher = AlertMatchRegexp.new
+          matcher = AlertMatchRegexp.new(var)
         end
       end
 
