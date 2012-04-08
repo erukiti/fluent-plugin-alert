@@ -102,16 +102,43 @@ class Fluent::AlertOutput < Fluent::Output
       @command = command_parse(command)
     end
 
+    def inspect
+      @command.inspect
+    end
+
+    def format_run(var, command_list)
+      command_list.each do |command|
+        case command[0]
+        when :text
+          @text += command[1]
+        when :var
+          output_var(var[command[1]])
+        when :nl
+          output_nl
+        when :hr
+          output_hr
+        when :if
+          format_run(var, command[2]) if var[command[1]]
+        when :each
+          var[command[1]].each do |v2|
+            format_run(v2, command[2])
+          end
+        end
+      end
+    end
+
     def format(var)
-      
+      @text = ''
+      format_run(var, @command)
+      @text
     end
 
     def output_nl
-      @text += "\n" if @text.size ==0 || @text[@text.size - 1] != "\n"
+      @text += "\n" if @text.size > 0 && @text[@text.size - 1] != "\n"
     end
 
     def output_hr
-      @text += "\n" if @text.size ==0 || @text[@text.size - 1] != "\n"
+      @text += "\n" if @text.size > 0 && @text[@text.size - 1] != "\n"
       @text += "----\n"
     end
 
@@ -126,7 +153,7 @@ class Fluent::AlertOutput < Fluent::Output
     def output_var_string(var)
       text_list = var.split(/\n/)
       if text_list.size == 1
-        @text += "\"#{var}\"\n"
+        @text += "\"#{var}\""
       else
         indent = get_textindent + 1
 
@@ -136,7 +163,7 @@ class Fluent::AlertOutput < Fluent::Output
           @text += "#{text_list[i]}\\n\n"
         end
         output_indent(indent)
-        @text += "#{text_list[text_list.size - 1]}\"\n"
+        @text += "#{text_list[text_list.size - 1]}\""
       end
     end
 
@@ -150,6 +177,7 @@ class Fluent::AlertOutput < Fluent::Output
         end
 
         var.each do |key, var2|
+          output_nl
           output_indent(indent)
           @text += "#{key}: "
           output_var(var2, indent)
@@ -162,6 +190,7 @@ class Fluent::AlertOutput < Fluent::Output
 
         index = 0
         var.each do |var2|
+          output_nl
           output_indent(indent)
           @text += "#{index}: "
           output_var(var2, indent)
