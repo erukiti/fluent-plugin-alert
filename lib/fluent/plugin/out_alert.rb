@@ -3,6 +3,7 @@
 class Fluent::AlertOutput < Fluent::Output
   class SendMail
     @@default = {}
+    @@is_debug = false
     def self.set_default(default_config)
       @@default = {}
       @@default[:server] = default_config['server']
@@ -11,40 +12,62 @@ class Fluent::AlertOutput < Fluent::Output
       @@default[:from] = default_config['from']
       @@default[:to] = default_config['to']
       @@default[:subject] = default_config['subject']
+      @@default[:user] = default_config['user']
       @@default[:password] = default_config['password']
       @@default[:authentication] = default_config['authentication']
       @@default[:enable_starttls_auto] = default_config['enable_starttls_auto']
     end
 
-    def self.send(config, body)
-      require 'mail'
+    def self.debug_mode(mode)
+      @@is_debug = mode
+    end
 
+    def self.send(config, body)
       server = config['server'] || @@default[:server]
       port = config['port'] || @@default[:port]
       domain = config['domain'] || @@default[:domain]
       from = config['from'] || @@default[:from]
       to = config['to'] || @@default[:to]
       subject = config['subject'] || @@default[:subject]
+      user = config['user'] || @@default[:user]
       password = config['password'] || @@default[:password]
       authentication = config['authentication'] || @@default[:authentication]
       enable_starttls_auto = config['enable_starttls_auto'] || @@default[:enable_starttls_auto]
 
-      mail = Mail.new
-      mail.charset = 'utf-8'
-      mail.from = from
-      mail.to = to
-      mail.subject = subject
-      mail.address = server
-      mail.port = port
-      mail.domain = domain
-      mail.user_name = from
-      mail.password = password if password
-      mail.authentication = authentication if authentication
-      mail.enable_starttls_auto = enable_starttls_auto if enable_starttls_auto
-      mail.body = body.encoding('utf-8', :invalid => :replace, :undef => :replace).force_encoding('binary')
-      mail.deliver
+      if @@is_debug
+        p from
+        p to
+        p subject
+        p server
+        p port
+        p domain
+        p from
+        p user if user
+        p password if password
+        p authentication if authentication
+        p enable_starttls_auto if enable_starttls_auto
+        p body
+        return
+      end
 
+      charset = 'utf-8'
+
+      smtp = Net::SMTP.new(server, port)
+      smtp.enable_starttls if enable_starttls_auto
+      smtp.start(domain, user, password, :plain) do |connection|
+        connection.send_mail(<<EOS, from, to.split(/,/))
+Date: #{Time::now.strftime("%a, %d %b %Y %X")}
+To: #{to}
+Subject: #{subject.force_encoding('binary')}
+Mime-Version: 1.0
+Content-Type: text/plain; charset=#{charset}
+
+#{body.force_encoding('binary')}
+EOS
+      end
     end
+
+#body.encoding('utf-8', :invalid => :replace, :undef => :replace).force_encoding('binary')
   
   end
 
@@ -294,13 +317,15 @@ class Fluent::AlertOutput < Fluent::Output
   class AlertMail < AlertBase
     def initialize(elements)
       super
+      require 'net/smtp'
+
       @config = elements
+      @formatter = FormatterText.new(elements['format']) if elements['format']
     end
 
     def emit(tag, time, record)
       return unless match(tag, time, record)
-      SendMail.send(@config, 'dummy')
-      #FIXME: Formatter で書き換える
+      SendMail.send(@config, @formatter.format(record))
     end
   end
 
@@ -330,6 +355,9 @@ class Fluent::AlertOutput < Fluent::Output
     end
 
     def emit(tag, time, record)
+      @alert_list.each do |am|
+        am.emit(tag, time, record)
+      end
     end
   end
 
@@ -346,6 +374,7 @@ class Fluent::AlertOutput < Fluent::Output
   config_param :from, :string, :default => nil
   config_param :to, :string, :default => nil
   config_param :subject, :string, :default => nil
+  config_param :user, :string, :default => nil
   config_param :password, :string, :default => nil
   config_param :authentication, :string, :default => nil
   config_param :enable_starttls_auto, :bool, :default => false

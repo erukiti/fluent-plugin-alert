@@ -212,24 +212,28 @@ class AlertTest < Test::Unit::TestCase
       alert.create({})
     }
 
-    alert_module = alert.create({'type' => 'config'})
+    alert_module = alert.create('type' => 'config')
     assert_equal Fluent::AlertOutput::AlertConfig, alert_module.class
 
-    alert_module = alert.create({'type' => 'mail'})
+    alert_module = alert.create('type' => 'mail')
     assert_equal Fluent::AlertOutput::AlertMail, alert_module.class
 
-    alert_module = alert.create({'type' => 'drop'})
+    alert_module = alert.create('type' => 'drop')
     assert_equal Fluent::AlertOutput::AlertDrop, alert_module.class
 
     # alert_module で match までうまくいくか結合
-    alert_module = alert.create({'type' => 'drop', 'match_tag_regexp' => '\.hoge$'})
+    alert_module = alert.create('type' => 'drop', 'match_tag_regexp' => '\.hoge$')
     assert_equal true, alert_module.match('hoge.hoge', Time.now, {})
-    alert_module = alert.create({'type' => 'drop', 'match_tag_regexp' => '\.hoge$'})
+    alert_module = alert.create('type' => 'drop', 'match_tag_regexp' => '\.hoge$')
     assert_equal false, alert_module.match('hoge.fuga', Time.now, {})
 
-    alert_module = alert.create({'type' => 'drop', 'match_regexp' => 'hoge.fuga \/hoge$'})
+    alert_module = alert.create('type' => 'drop', 'match_regexp' => 'hoge.fuga \/hoge$')
     assert_equal true, alert_module.match('piyo.piyo', Time.now, {'hoge'=> {'fuga' => '/hoge'}})
 
+    # alert_module で一通りうまくいくか結合
+#    Fluent::AlertOutput::SendMail.debug_mode true
+#    alert_module = alert.create('type' => 'mail', 'match_tag_regexp' => '\.hoge$', 'format' => '{each hoge}{@fuga}{nl}{end}')
+#    alert_module.emit('hoge.hoge', Time.now, {'hoge' => [{'fuga' => 'piyo'}, {'fuga' => 'poyo'}]})
   end
 end
 
@@ -239,6 +243,8 @@ class AlertOutputTest < Test::Unit::TestCase
   end
 
   CONFIG = %[
+
+
     <alert>
       match_tag_regexp \.config$
       type config
@@ -246,7 +252,7 @@ class AlertOutputTest < Test::Unit::TestCase
     <alert>
       match_regexp application.path ^\/hoge\/
       type mail
-      mailto hoge@example.com
+      to hoge@example.com
       format {@application}{hr}{each @log}{@file}:{@line}:{if @func}{@func}:{end} {@var}{nl}{end}{hr}{@pagebody}
     </alert>
     <alert>
