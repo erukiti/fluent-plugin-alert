@@ -155,6 +155,9 @@ class AlertTest < Test::Unit::TestCase
 
     alert_module = alert.create({'type' => 'drop'})
     assert_equal Fluent::AlertOutput::AlertDrop, alert_module.class
+
+    alert_module = alert.create({'type' => 'drop', 'match_tag_regexp' => '\.hoge$'})
+    assert_equal true, alert_module.match('hoge.hoge', Time.now, {})
   end
 end
 
