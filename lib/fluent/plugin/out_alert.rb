@@ -173,6 +173,9 @@ EOS
       @text.rindex("\n") ? @text.size - (@text.rindex("\n") + 1) : @text.size
 	end
 
+    def output_var_numeric(var)
+      @text += var.to_s
+    end
     def output_var_string(var)
       text_list = var.split(/\n/)
       if text_list.size == 1
@@ -193,6 +196,8 @@ EOS
     def output_var(var, indent = 0)
       if var.is_a? String
         output_var_string(var)
+      elsif var.is_a? Numeric
+        output_var_numeric(var)
       elsif var.is_a? Hash
         if @text.size > 0
           indent += 2
