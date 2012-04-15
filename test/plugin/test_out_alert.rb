@@ -7,7 +7,7 @@ class FormatterTextTest < Test::Unit::TestCase
     # 文字列単品
     f = Fluent::AlertOutput::FormatterText.new ""
     f.output_var "hoge"
-    assert_equal "\"hoge\"", f.text
+    assert_equal "hoge", f.text
 
     # 複数行文字列
     f.text = ""
@@ -22,7 +22,7 @@ class FormatterTextTest < Test::Unit::TestCase
     # 継続状態、文字列単品"
     f.text = "hoge.html:80: "
     f.output_var "hoge"
-	assert_equal "hoge.html:80: \"hoge\"", f.text
+	assert_equal "hoge.html:80: hoge", f.text
 
     # 継続状態、複数行文字列
     f.text = "hoge.html:80: "
@@ -32,7 +32,7 @@ class FormatterTextTest < Test::Unit::TestCase
     # 継続状態(\n含む)、文字列単品
     f.text = "hoge\nfuga: "
     f.output_var "piyo"
-    assert_equal "hoge\nfuga: \"piyo\"", f.text
+    assert_equal "hoge\nfuga: piyo", f.text
 
     # 継続状態(\n含む)、複数行文字列
     f.text = "hogehoge\nfuga: "
@@ -43,7 +43,7 @@ class FormatterTextTest < Test::Unit::TestCase
     # Hash, 文字列単品
     f.text = ""
     f.output_var("hoge" => "ほげ")
-    assert_equal "hoge: \"ほげ\"", f.text
+    assert_equal "hoge: ほげ", f.text
 
     # Hash, 複数行文字列
     f.text = ""
@@ -53,43 +53,43 @@ class FormatterTextTest < Test::Unit::TestCase
     # Hash複数, 文字列単品＆複数行文字列
     f.text = ""
     f.output_var("hoge" => "ほげ", "fuga" => "multiline\nstring")
-    assert_equal "hoge: \"ほげ\"\nfuga: \"multiline\\n\n       string\"", f.text
+    assert_equal "hoge: ほげ\nfuga: \"multiline\\n\n       string\"", f.text
 
     # 継続状態、Hash複数, 文字列単品＆複数行文字列
     f.text = "hoge.html:80: "
     f.output_var("hoge" => "ほげ", "fuga" => "multiline\nstring")
-    assert_equal "hoge.html:80: \n  hoge: \"ほげ\"\n  fuga: \"multiline\\n\n         string\"", f.text
+    assert_equal "hoge.html:80: \n  hoge: ほげ\n  fuga: \"multiline\\n\n         string\"", f.text
 
     # Array, 文字列単品
     f.text = ""
     f.output_var(["ほげ", "ふが"])
-    assert_equal "0: \"ほげ\"\n1: \"ふが\"", f.text
+    assert_equal "0: ほげ\n1: ふが", f.text
 
     # Array, 複数行文字列
     f.text = ""
     f.output_var(["ほげ", "multiline\nstring"])
-    assert_equal "0: \"ほげ\"\n1: \"multiline\\n\n    string\"", f.text
+    assert_equal "0: ほげ\n1: \"multiline\\n\n    string\"", f.text
 
     ## 自分がHash/Array, 子がHash/Array
     # 非継続状態 Hash/Hash
     f.text = ""
     f.output_var({"hoge" => {"fuga" => "piyo"}})
-    assert_equal "hoge: \n  fuga: \"piyo\"", f.text
+    assert_equal "hoge: \n  fuga: piyo", f.text
 
     #継続状態 Hash/Hash
     f.text = "tpl/hoge.html:80: "
     f.output_var({"hoge" => {"fuga" => "piyo"}})
-    assert_equal "tpl/hoge.html:80: \n  hoge: \n    fuga: \"piyo\"", f.text
+    assert_equal "tpl/hoge.html:80: \n  hoge: \n    fuga: piyo", f.text
 
     # 非継続状態 Hash/Hash
     f.text = ""
     f.output_var({"hoge" => ['piyo']})
-    assert_equal "hoge: \n  0: \"piyo\"", f.text
+    assert_equal "hoge: \n  0: piyo", f.text
 
     #継続状態 Hash/Hash
     f.text = "tpl/hoge.html:80: "
     f.output_var({"hoge" => ['piyo']})
-    assert_equal "tpl/hoge.html:80: \n  hoge: \n    0: \"piyo\"", f.text
+    assert_equal "tpl/hoge.html:80: \n  hoge: \n    0: piyo", f.text
   end
 
   def test_output_nl
@@ -134,27 +134,27 @@ class FormatterTextTest < Test::Unit::TestCase
     assert_equal "hoge", f.format({})
 
     f = Fluent::AlertOutput::FormatterText.new "{@hoge}"
-    assert_equal "\"fuga\"", f.format({'hoge' => 'fuga'})
+    assert_equal "fuga", f.format({'hoge' => 'fuga'})
     assert_equal "\"multiline\\n\n string\"", f.format({'hoge' => "multiline\nstring"})
-    assert_equal "hoge: \n  fuga: \"piyo\"", f.format({"hoge" => {"hoge" => {"fuga" => "piyo"}}})
+    assert_equal "hoge: \n  fuga: piyo", f.format({"hoge" => {"hoge" => {"fuga" => "piyo"}}})
 
     f = Fluent::AlertOutput::FormatterText.new "hoge.html:80: {@hoge}"
-    assert_equal "hoge.html:80: \n  hoge: \"ほげ\"\n  fuga: \"multiline\\n\n         string\"", f.format("hoge" => {"hoge" => "ほげ", "fuga" => "multiline\nstring"})
+    assert_equal "hoge.html:80: \n  hoge: ほげ\n  fuga: \"multiline\\n\n         string\"", f.format("hoge" => {"hoge" => "ほげ", "fuga" => "multiline\nstring"})
 
     f = Fluent::AlertOutput::FormatterText.new "{@hoge}{nl}"
-    assert_equal "\"fuga\"\n", f.format({'hoge' => 'fuga'})
+    assert_equal "fuga\n", f.format({'hoge' => 'fuga'})
     assert_equal "\"multiline\\n\n string\"\n", f.format({'hoge' => "multiline\nstring"})
-    assert_equal "hoge: \n  fuga: \"piyo\"\n", f.format({"hoge" => {"hoge" => {"fuga" => "piyo"}}})
+    assert_equal "hoge: \n  fuga: piyo\n", f.format({"hoge" => {"hoge" => {"fuga" => "piyo"}}})
 
     f = Fluent::AlertOutput::FormatterText.new "{@hoge}{hr}{@hoge}"
-    assert_equal "\"fuga\"\n----\n\"fuga\"", f.format({'hoge' => 'fuga'})
+    assert_equal "fuga\n----\nfuga", f.format({'hoge' => 'fuga'})
 
     f = Fluent::AlertOutput::FormatterText.new "{if hoge}{@hoge}{end}"
-    assert_equal "\"fuga\"", f.format({'hoge' => 'fuga'})
+    assert_equal "fuga", f.format({'hoge' => 'fuga'})
     assert_equal "", f.format({'fuga' => 'fuga'})
 
     f = Fluent::AlertOutput::FormatterText.new "{each hoge}{@fuga}{nl}{end}"
-    assert_equal "\"piyo\"\n\"poyo\"\n", f.format({'hoge' => [{'fuga' => 'piyo'}, {'fuga' => 'poyo'}]})
+    assert_equal "piyo\npoyo\n", f.format({'hoge' => [{'fuga' => 'piyo'}, {'fuga' => 'poyo'}]})
 
 
   end

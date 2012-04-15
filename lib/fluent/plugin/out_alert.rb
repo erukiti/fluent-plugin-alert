@@ -179,7 +179,11 @@ EOS
     def output_var_string(var)
       text_list = var.split(/\n/)
       if text_list.size == 1
-        @text += "\"#{var}\""
+        if /^\s+/ =~ var || /\s+$/ =~ var
+          @text += "\"#{var}\""
+        else
+          @text += "#{var}"
+        end
       else
         indent = get_textindent + 1
 
