@@ -303,12 +303,12 @@ EOS
   end
 
   class AlertDrop < AlertBase
-
     def initialize(elements)
       super
     end
+
     def emit(tag, time, record)
-      return unless match(tag, time, record)
+      raise AlertControllDrop if match(tag, time, record)
     end
   end
 
@@ -319,7 +319,7 @@ EOS
     end
 
     def emit(tag, time, record)
-      return unless match(tag, time, record)
+      raise AlertControllConfigure, record if match(tag, time, record)
     end
   end
 
@@ -333,12 +333,28 @@ EOS
     end
 
     def emit(tag, time, record)
-      return unless match(tag, time, record)
-      SendMail.send(@config, @formatter.format(record))
+      SendMail.send(@config, @formatter.format(record)) if match(tag, time, record)
     end
   end
 
+  class AlertFoward < AlertBase
+    def initialize(elements)
+      super
+      @tag = elements['tag']
+    end
+    
+    def emit(tag,time, record)
+      Fluent::Engine.emit(@tag, time, record) if match(tag, time, record)
+    end
+  end
+
+  class AlertControll < Exception ; end
+  class AlertControllDrop < AlertControll ; end
+  class AlertControllConfigure < AlertControll
+  end
+
   class Alert
+    attr_reader :alert_list
     def create(elements)
       raise Fluent::ConfigError, "no type" unless elements['type']
       # FIXME: リフレクション使った何かに書き直す
@@ -349,6 +365,8 @@ EOS
         return AlertMail.new(elements)
       when 'drop'
         return AlertDrop.new(elements)
+      when 'foward'
+        return AlertFoward.new(elements)
       end
     end
 
@@ -365,7 +383,17 @@ EOS
 
     def emit(tag, time, record)
       @alert_list.each do |am|
-        am.emit(tag, time, record)
+        begin 
+          am.emit(tag, time, record)
+        rescue AlertControll => e
+          case e
+          when AlertControllDrop
+            return
+          when AlertControllConfigure
+            configure(eval(e.message))
+            return
+          end
+        end
       end
     end
   end
@@ -387,6 +415,8 @@ EOS
   config_param :password, :string, :default => nil
   config_param :authentication, :string, :default => nil
   config_param :enable_starttls_auto, :bool, :default => false
+
+  attr_reader :alert
 
   def configure(conf)
     elements_list = []

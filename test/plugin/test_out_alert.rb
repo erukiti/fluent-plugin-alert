@@ -243,21 +243,20 @@ class AlertOutputTest < Test::Unit::TestCase
   end
 
   CONFIG = %[
-
-
     <alert>
       match_tag_regexp \.config$
       type config
+    </alert>
+    <alert>
+      #match_exists /tmp/hoge
+      match_tag_regexp \.drop$
+      type drop
     </alert>
     <alert>
       match_regexp application.path ^\/hoge\/
       type mail
       to hoge@example.com
       format {@application}{hr}{each @log}{@file}:{@line}:{if @func}{@func}:{end} {@var}{nl}{end}{hr}{@pagebody}
-    </alert>
-    <alert>
-      match_exists /tmp/hoge
-      type drop
     </alert>
     <alert>
       match_tag_regexp \.fatal$
@@ -284,7 +283,7 @@ class AlertOutputTest < Test::Unit::TestCase
 
   def test_configure
     d = create_driver
-#    assert_equal 5, d.instance.alert_list.size
+    assert_equal 5, d.instance.alert.alert_list.size
 #    assert_equal 3, outputs.size
 #    assert_equal Fluent::TestOutput, outputs[0].class
 #    assert_equal Fluent::TestOutput, outputs[1].class
@@ -316,21 +315,30 @@ class AlertOutputTest < Test::Unit::TestCase
     # d.run
   end
 
-  def test_write
-    d = create_driver
-
-    # time = Time.parse("2011-01-02 13:14:15 UTC").to_i
-    # d.emit({"a"=>1}, time)
-    # d.emit({"a"=>2}, time)
-
-    # ### FileOutput#write returns path
-    # path = d.run
-    # expect_path = "#{TMP_DIR}/out_file_test._0.log.gz"
-    # assert_equal expect_path, path
-  end
-
   def test_emit
-    d = create_driver
+    d = create_driver(CONFIG, 'test.test')
+    d.run do
+      d.emit({'key' => 'hoge'}, Time.parse("2012-03-03 00:00:00 UTC").to_i)
+    end
+    assert_equal 1, d.emits.size
+    assert_equal ['hoge.fuga', Time.parse("2012-03-03 00:00:00 UTC").to_i, {'key' => 'hoge'}], d.emits[0]
+
+    d = create_driver(CONFIG, 'test.drop')
+    d.run do 
+      d.emit({'key' => 'hoge'}, Time.parse("2012-03-03 00:00:00 UTC").to_i)
+    end
+    assert_equal 0, d.emits.size
+
+    d = create_driver(CONFIG, 'test.config')
+    d.run do 
+      d.emit([
+        {'type' => 'drop', 'match_tag_regexp' => '\.test$'},
+      ], Time.parse("2012-03-03 00:00:00 UTC").to_i)
+    end
+    assert_equal 0, d.emits.size
+    assert_equal 1, d.instance.alert.alert_list.size
+
+
   end
 end
 
